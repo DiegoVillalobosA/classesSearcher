@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pip install playwright==1.46.0
+          pip install playwright
           python -m playwright install --with-deps chromium
 
       - name: Run monitor
