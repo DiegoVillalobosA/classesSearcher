@@ -1,14 +1,15 @@
 name: classwatcher
+
 on:
   schedule:
-    # dos veces por hora para evitar picos exactos
+    # 2 veces por hora, en minutos que no son tan concurridos
     - cron: "7,37 * * * *"
   workflow_dispatch: {}
 
 jobs:
   run:
     permissions:
-      contents: write  # para poder commitear state.json
+      contents: write  # para actualizar state.json
     runs-on: ubuntu-latest
 
     steps:
@@ -27,16 +28,16 @@ jobs:
 
       - name: Run monitor
         env:
-          # URL de ASU
+          # página de ASU
           URL: https://catalog.apps.asu.edu/catalog/classes
 
-          # aquí pones tus clases (puedes añadir más objetos al array)
+          # tus filtros (puedes poner más objetos)
           QUERIES_JSON: '[{"subject":"CSE","number":"412","term":"Spring 2026"}]'
 
-          # AJUSTA estos selectores a los reales de la página
+          # SELECTORES: AJÚSTALOS al HTML real de ASU
           SELECTORS_JSON: '{"subject":"input[name=\"subject\"]","number":"input[name=\"number\"]","term":"select[name=\"term\"]","search\":\"button:has-text(\\\"Search\\\")\",\"table\":\"table.results\"}'
 
-          # Telegram desde secretos del repo
+          # Telegram desde secrets
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python monitor.py
