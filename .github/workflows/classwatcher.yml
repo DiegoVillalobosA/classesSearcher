@@ -1,0 +1,52 @@
+name: classwatcher
+on:
+  schedule:
+    # dos veces por hora para evitar picos exactos
+    - cron: "7,37 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    permissions:
+      contents: write  # para poder commitear state.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright
+        run: |
+          pip install playwright==1.47.2
+          python -m playwright install --with-deps chromium
+
+      - name: Run monitor
+        env:
+          # URL de ASU
+          URL: https://catalog.apps.asu.edu/catalog/classes
+
+          # aquí pones tus clases (puedes añadir más objetos al array)
+          QUERIES_JSON: '[{"subject":"CSE","number":"412","term":"Spring 2026"}]'
+
+          # AJUSTA estos selectores a los reales de la página
+          SELECTORS_JSON: '{"subject":"input[name=\"subject\"]","number":"input[name=\"number\"]","term":"select[name=\"term\"]","search\":\"button:has-text(\\\"Search\\\")\",\"table\":\"table.results\"}'
+
+          # Telegram desde secretos del repo
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor.py
+
+      - name: Commit state if changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "update state [skip ci]" || true
+            git push
+          fi
